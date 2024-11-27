@@ -1,35 +1,31 @@
 #!/usr/bin/env node
 
-const fs = require('fs').promises;
+const fs = require('fs');
 
-async function countStudents(path) {
-  try {
-    const data = await fs.readFile(path, 'utf-8');
-    const lines = data.trim().split('\n');
-    if (lines.length <= 1) throw new Error('No valid student data in the file');
+const countStudents = (path) => {
+  const promise = (res, rej) => {
+    fs.readFile(path, (err, data) => {
+      if (err) rej(Error('Cannot load the database'));
+      if (data) {
+        let newData = data.toString().split('\n');
+        const obj = {};
 
-    const header = lines[0].split(',');
-    const students = lines.slice(1).filter((line) => line.trim() !== '');
-    const fields = {};
+        newData = newData.slice(1, newData.length - 1);
+        console.log(`Number of Students: ${newData.length}`);
 
-    console.log(`Number of students: ${students.length}`);
-
-    students.forEach((line) => {
-      const parts = line.split(',');
-      if (parts.length < header.length) return; // Skip malformed rows
-      const [firstname, , , field] = parts.map((part) => part.trim());
-      if (!fields[field]) fields[field] = [];
-      fields[field].push(firstname);
+        newData.forEach((el) => {
+          const student = el.split(', ');
+          if (!obj[student[3]]) obj[student[3]] = [];
+          obj[student[3]].push(student[0]);
+        });
+        for (const cls in obj) {
+          if (cls) console.log(`Number of students in ${cls}: ${obj[cls].length}. List: ${obj[cls].join(', ')}`);
+        }
+      }
+      res();
     });
-
-    for (const field in fields) {
-      console.log(
-        `Number of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}`
-      );
-    }
-  } catch (err) {
-    throw new Error('Cannot load the database');
-  }
+  };
+  return new Promise(promise);
 };
 
 module.exports = countStudents;
